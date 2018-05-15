@@ -27,18 +27,21 @@
   var NATIVE_NAMES = 'Object Number String Array Date RegExp Function';
 
   // Static method flag
-  var STATIC   = 0x1;
+  var STATIC = 0x1;
 
   // Instance method flag
   var INSTANCE = 0x2;
 
   // IE8 has a broken defineProperty but no defineProperties so this saves a try/catch.
-  var PROPERTY_DESCRIPTOR_SUPPORT = !!(Object.defineProperty && Object.defineProperties);
+  var PROPERTY_DESCRIPTOR_SUPPORT = !!(
+    Object.defineProperty && Object.defineProperties
+  );
 
   // The global context. Rhino uses a different "global" keyword so
   // do an extra check to be sure that it's actually the global context.
   // istanbul ignore next
-  var globalContext = typeof global !== 'undefined' && global.Object === Object ? global : this;
+  var globalContext =
+    typeof global !== 'undefined' && global.Object === Object ? global : window;
 
   // Is the environment node?
   var hasExports = typeof module !== 'undefined' && module.exports;
@@ -54,11 +57,12 @@
 
   // Defining properties.
   // istanbul ignore next
-  var defineProperty = PROPERTY_DESCRIPTOR_SUPPORT ?  Object.defineProperty : definePropertyShim;
+  var defineProperty = PROPERTY_DESCRIPTOR_SUPPORT
+    ? Object.defineProperty
+    : definePropertyShim;
 
   // A default chainable class for unknown types.
   var DefaultChainable = getNewChainableClass('Chainable');
-
 
   // Global methods
 
@@ -117,7 +121,6 @@
    *
    ***/
   function createNamespace(name) {
-
     // Is the current namespace Object?
     var isObject = name === 'Object';
 
@@ -181,20 +184,25 @@
      * @param {ExtendOptions} [opts]
      *
      ***/
-    var extend = function (opts) {
-
-      var nativeClass = globalContext[name], nativeProto = nativeClass.prototype;
-      var staticMethods = {}, instanceMethods = {}, methodsByName;
+    var extend = function(opts) {
+      var nativeClass = globalContext[name],
+        nativeProto = nativeClass.prototype;
+      var staticMethods = {},
+        instanceMethods = {},
+        methodsByName;
 
       function objectRestricted(name, target) {
-        return isObject && target === nativeProto &&
-               (!allowObjectPrototype || name === 'get' || name === 'set');
+        return (
+          isObject &&
+          target === nativeProto &&
+          (!allowObjectPrototype || name === 'get' || name === 'set')
+        );
       }
 
       function arrayOptionExists(field, val) {
         var arr = opts[field];
         if (arr) {
-          for (var i = 0, el; el = arr[i]; i++) {
+          for (var i = 0, el; (el = arr[i]); i++) {
             if (el === val) {
               return true;
             }
@@ -223,8 +231,10 @@
       }
 
       function namespaceIsExcepted() {
-        return arrayOptionExists('except', nativeClass) ||
-               arrayOptionExcludes('namespaces', nativeClass);
+        return (
+          arrayOptionExists('except', nativeClass) ||
+          arrayOptionExcludes('namespaces', nativeClass)
+        );
       }
 
       function methodIsExcepted(methodName) {
@@ -232,9 +242,11 @@
       }
 
       function canExtend(methodName, method, target) {
-        return !objectRestricted(methodName, target) &&
-               !disallowedByFlags(methodName, target, method.flags) &&
-               !methodIsExcepted(methodName);
+        return (
+          !objectRestricted(methodName, target) &&
+          !disallowedByFlags(methodName, target, method.flags) &&
+          !methodIsExcepted(methodName)
+        );
       }
 
       opts = opts || {};
@@ -247,7 +259,10 @@
         allowObjectPrototype = opts.objectPrototype;
       }
 
-      forEachProperty(methodsByName || sugarNamespace, function(method, methodName) {
+      forEachProperty(methodsByName || sugarNamespace, function(
+        method,
+        methodName
+      ) {
         if (methodsByName) {
           // If we have method names passed in an array,
           // then we need to flip the key and value here
@@ -255,10 +270,16 @@
           methodName = method;
           method = sugarNamespace[methodName];
         }
-        if (hasOwn(method, 'instance') && canExtend(methodName, method, nativeProto)) {
+        if (
+          hasOwn(method, 'instance') &&
+          canExtend(methodName, method, nativeProto)
+        ) {
           instanceMethods[methodName] = method.instance;
         }
-        if(hasOwn(method, 'static') && canExtend(methodName, method, nativeClass)) {
+        if (
+          hasOwn(method, 'static') &&
+          canExtend(methodName, method, nativeClass)
+        ) {
           staticMethods[methodName] = method;
         }
       });
@@ -371,7 +392,6 @@
      ***/
     defineWithOptionCollect('defineInstanceAndStatic', INSTANCE | STATIC);
 
-
     /***
      * @method defineStaticWithArguments(methods)
      * @returns SugarNamespace
@@ -455,7 +475,11 @@
      * @param {string} methodName - Name of a single method to be defined.
      * @param {Function} methodFn - Function body of a single method to be defined.
      ***/
-    setProperty(sugarNamespace, 'defineStaticPolyfill', function(arg1, arg2, arg3) {
+    setProperty(sugarNamespace, 'defineStaticPolyfill', function(
+      arg1,
+      arg2,
+      arg3
+    ) {
       var opts = collectDefineOptions(arg1, arg2, arg3);
       extendNative(globalContext[name], opts.methods, true, opts.last);
       return sugarNamespace;
@@ -488,7 +512,11 @@
      * @param {string} methodName - Name of a single method to be defined.
      * @param {Function} methodFn - Function body of a single method to be defined.
      ***/
-    setProperty(sugarNamespace, 'defineInstancePolyfill', function(arg1, arg2, arg3) {
+    setProperty(sugarNamespace, 'defineInstancePolyfill', function(
+      arg1,
+      arg2,
+      arg3
+    ) {
       var opts = collectDefineOptions(arg1, arg2, arg3);
       extendNative(globalContext[name].prototype, opts.methods, true, opts.last);
       // Map instance polyfills to chainable as well.
@@ -528,9 +556,8 @@
     mapNativeToChainable(name);
     mapObjectChainablesToNamespace(sugarNamespace);
 
-
     // Export
-    return Sugar[name] = sugarNamespace;
+    return (Sugar[name] = sugarNamespace);
   }
 
   function setGlobalProperties() {
@@ -540,13 +567,13 @@
     setProperty(Sugar, 'createNamespace', createNamespace);
 
     setProperty(Sugar, 'util', {
-      'hasOwn': hasOwn,
-      'getOwn': getOwn,
-      'setProperty': setProperty,
-      'classToString': classToString,
-      'defineProperty': defineProperty,
-      'forEachProperty': forEachProperty,
-      'mapNativeToChainable': mapNativeToChainable
+      hasOwn: hasOwn,
+      getOwn: getOwn,
+      setProperty: setProperty,
+      classToString: classToString,
+      defineProperty: defineProperty,
+      forEachProperty: forEachProperty,
+      mapNativeToChainable: mapNativeToChainable
     });
   }
 
@@ -554,12 +581,12 @@
     return SUGAR_GLOBAL;
   }
 
-
   // Defining Methods
 
   function defineMethods(sugarNamespace, methods, type, args, flags) {
     forEachProperty(methods, function(method, methodName) {
-      var instanceMethod, staticMethod = method;
+      var instanceMethod,
+        staticMethod = method;
       if (args) {
         staticMethod = wrapMethodWithArguments(method);
       }
@@ -616,7 +643,9 @@
     // collecting 1 argument earlier.
     var startCollect = fn.length - 1 - (instance ? 1 : 0);
     return function() {
-      var args = [], collectedArgs = [], len;
+      var args = [],
+        collectedArgs = [],
+        len;
       if (instance) {
         args.push(this);
       }
@@ -635,7 +664,7 @@
   }
 
   function wrapInstanceMethodFixed(fn) {
-    switch(fn.length) {
+    switch (fn.length) {
       // Wrapped instance methods will always be passed the instance
       // as the first argument, but requiring the argument to be defined
       // may cause confusion here, so return the same wrapped function regardless.
@@ -682,7 +711,6 @@
     }
   }
 
-
   // Chainables
 
   function getNewChainableClass(name) {
@@ -706,7 +734,10 @@
   }
 
   function defineChainableMethod(sugarNamespace, methodName, fn) {
-    var wrapped = wrapWithChainableResult(fn), existing, collision, dcp;
+    var wrapped = wrapWithChainableResult(fn),
+      existing,
+      collision,
+      dcp;
     dcp = DefaultChainable.prototype;
     existing = dcp[methodName];
 
@@ -738,7 +769,10 @@
   }
 
   function mapObjectChainablesToNamespace(sugarNamespace) {
-    forEachProperty(Sugar.Object && Sugar.Object.prototype, function(val, methodName) {
+    forEachProperty(Sugar.Object && Sugar.Object.prototype, function(
+      val,
+      methodName
+    ) {
       if (typeof val === 'function') {
         setObjectChainableOnNamespace(sugarNamespace, methodName, val);
       }
@@ -766,7 +800,8 @@
 
   function disambiguateMethod(methodName) {
     var fn = function() {
-      var raw = this.raw, sugarNamespace;
+      var raw = this.raw,
+        sugarNamespace;
       if (raw != null) {
         // Find the Sugar namespace for this unknown.
         sugarNamespace = namespacesByClassString[classToString(raw)];
@@ -787,7 +822,7 @@
 
   function mapNativeToChainable(name, methodNames) {
     var sugarNamespace = namespacesByName[name],
-        nativeProto = globalContext[name].prototype;
+      nativeProto = globalContext[name].prototype;
 
     if (!methodNames && ownPropertyNames) {
       methodNames = ownPropertyNames(nativeProto);
@@ -817,23 +852,24 @@
   }
 
   function nativeMethodProhibited(methodName) {
-    return methodName === 'constructor' ||
-           methodName === 'valueOf' ||
-           methodName === '__proto__';
+    return (
+      methodName === 'constructor' ||
+      methodName === 'valueOf' ||
+      methodName === '__proto__'
+    );
   }
-
 
   // Util
 
   // Internal references
   var ownPropertyNames = Object.getOwnPropertyNames,
-      internalToString = Object.prototype.toString,
-      internalHasOwnProperty = Object.prototype.hasOwnProperty;
+    internalToString = Object.prototype.toString,
+    internalHasOwnProperty = Object.prototype.hasOwnProperty;
 
   // Defining this as a variable here as the ES5 module
   // overwrites it to patch DONTENUM.
-  var forEachProperty = function (obj, fn) {
-    for(var key in obj) {
+  var forEachProperty = function(obj, fn) {
+    for (var key in obj) {
       if (!hasOwn(obj, key)) continue;
       if (fn.call(obj, obj[key], key, obj) === false) break;
     }
